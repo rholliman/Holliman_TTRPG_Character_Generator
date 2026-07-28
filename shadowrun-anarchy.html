@@ -1,1 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shadowrun: Anarchy — Runner Creation Uplink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --void:#05080a;
+    --panel:#0b1210;
+    --line: rgba(53,212,107,0.18);
+    --green:#35d46b;
+    --amber:#ffb000;
+    --red:#ff4d4d;
+    --text:#d7e8dc;
+    --dim:#6f8a78;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    background:var(--void);
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    min-height:100%;
+  }
+
+  .rain{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image: repeating-linear-gradient(100deg, rgba(53,212,107,0.05) 0px, rgba(53,212,107,0.05) 1px, transparent 1px, transparent 34px);
+    animation: rainfall 3.5s linear infinite;
+    opacity:0.5;
+  }
+  @keyframes rainfall{ from{ background-position:0 0; } to{ background-position:-200px 400px; } }
+
+  .scanlines{
+    position:fixed; inset:0; z-index:6; pointer-events:none;
+    background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 2px, transparent 3px);
+    mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed; inset:0; z-index:5; pointer-events:none;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.9) 100%);
+  }
+
+  main{
+    position:relative; z-index:10;
+    max-width:860px;
+    margin:0 auto;
+    padding:6vh 5vw 10vh;
+  }
+
+  .boot{
+    font-size:0.72rem;
+    color:var(--dim);
+    letter-spacing:0.04em;
+    margin-bottom:0.6rem;
+  }
+  h1.title{
+    font-size:clamp(1.3rem, 4vw, 2.1rem);
+    font-weight:800;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--green);
+    text-shadow: 0 0 6px rgba(53,212,107,0.7), 0 0 18px rgba(53,212,107,0.35);
+    margin:0 0 0.3rem;
+    line-height:1.4;
+  }
+  .eyebrow{
+    font-size:0.85rem;
+    letter-spacing:0.18em;
+    color:var(--amber);
+    text-transform:uppercase;
+    margin-bottom:2.6rem;
+  }
+  .eyebrow::before{ content:"> "; }
+
+  .directive{
+    background:rgba(5,8,10,0.8);
+    border:1px solid var(--green);
+    border-left:4px solid var(--green);
+    padding:1.2rem 1.4rem;
+    margin-bottom:2.2rem;
+  }
+  .directive h2{
+    font-size:1rem;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--green);
+    margin:0 0 0.6rem;
+  }
+  .directive p{
+    margin:0 0 0.6rem;
+    font-size:0.86rem;
+    line-height:1.75;
+    color:var(--text);
+  }
+  .directive p:last-child{ margin-bottom:0; }
+  .directive code{
+    color:var(--amber);
+    background:rgba(255,176,0,0.08);
+    padding:0.1rem 0.3rem;
+  }
+
+  section.card{
+    background:rgba(11,18,16,0.75);
+    border:1px solid var(--line);
+    padding:1.6rem 1.6rem 1.8rem;
+    margin-bottom:1.5rem;
+  }
+  section.card h3{
+    font-size:1.05rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    margin:0 0 0.4rem;
+    color:var(--amber);
+  }
+  section.card .helper{
+    font-size:0.82rem;
+    color:var(--dim);
+    line-height:1.65;
+    margin-bottom:1rem;
+  }
+  section.card .helper em{ color:var(--green); font-style:normal; }
+
+  label.field-label{
+    display:block;
+    font-size:0.75rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--dim);
+    margin-bottom:0.35rem;
+  }
+
+  input[type="text"], textarea, select{
+    width:100%;
+    padding:0.7rem 0.85rem;
+    border-radius:2px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,0.03);
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.9rem;
+  }
+  input[type="text"]{ margin-bottom:1.1rem; }
+  textarea{ resize:vertical; min-height:95px; line-height:1.6; }
+  input:focus, textarea:focus, select:focus{ outline:1px solid var(--green); outline-offset:1px; }
+  select option{ background:var(--panel); color:var(--text); }
+
+  .examples{
+    background:rgba(255,255,255,0.03);
+    border-left:3px solid var(--amber);
+    padding:0.8rem 1rem;
+    font-size:0.8rem;
+    line-height:1.75;
+    color:var(--text);
+    margin-bottom:1.1rem;
+  }
+  .examples strong{ color:var(--amber); }
+
+  /* archetype cards */
+  .archetype-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:0.9rem;
+  }
+  @media (max-width:640px){ .archetype-grid{ grid-template-columns:1fr; } }
+  .arch-opt{
+    display:flex; gap:0.6rem; align-items:flex-start;
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);
+    padding:0.7rem 0.8rem;
+    font-size:0.8rem; line-height:1.5;
+  }
+  .arch-opt input{ margin-top:0.25rem; accent-color:var(--green); }
+  .arch-opt .name{ color:var(--green); font-weight:700; display:block; letter-spacing:0.03em; }
+  .arch-opt .sub{ color:var(--dim); font-size:0.76rem; }
+
+  /* attributes */
+  .attr-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+    gap:1rem;
+  }
+  .attr-block{
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);
+    padding:0.7rem 0.8rem;
+  }
+  .attr-block label{
+    font-size:0.78rem;
+    color:var(--green);
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    display:block;
+    margin-bottom:0.4rem;
+  }
+  .attr-block input[type="number"]{
+    width:100%;
+    padding:0.4rem;
+    background:rgba(0,0,0,0.3);
+    border:1px solid var(--line);
+    color:var(--amber);
+    font-family:'JetBrains Mono', monospace;
+    font-size:1.1rem;
+    text-align:center;
+  }
+  .points-counter{
+    font-size:0.85rem;
+    color:var(--amber);
+    margin-top:1rem;
+  }
+
+  .check-list, .radio-list{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:0.55rem 1rem;
+  }
+  @media (max-width:640px){ .check-list, .radio-list{ grid-template-columns:1fr; } }
+  .opt{
+    display:flex; align-items:flex-start; gap:0.55rem;
+    background:rgba(255,255,255,0.03);
+    border:1px solid var(--line);
+    padding:0.55rem 0.7rem;
+    font-size:0.8rem; line-height:1.5;
+  }
+  .opt input{ margin-top:0.2rem; accent-color:var(--green); flex-shrink:0; }
+  .opt.negative input{ accent-color:var(--red); }
+  .opt .opt-title{ color:var(--text); font-weight:700; display:block; }
+  .opt .opt-sub{ color:var(--dim); font-size:0.75rem; }
+
+  .counter{ font-size:0.76rem; color:var(--amber); margin:0.6rem 0 0; }
+
+  .q-block{ margin-bottom:1rem; }
+  .q-block label{
+    display:block; font-size:0.82rem; color:var(--green);
+    margin-bottom:0.4rem; line-height:1.5;
+  }
+
+  .cta-row{
+    display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-top:2rem;
+  }
+  button.cta{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:0.95rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    padding:0.85rem 1.6rem;
+    border:2px solid var(--green);
+    background:rgba(53,212,107,0.1);
+    color:var(--green);
+    cursor:pointer;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  button.cta:hover{ transform:translateY(-2px); box-shadow:0 0 20px -2px rgba(53,212,107,0.6); }
+  button.cta.secondary{ border-color:var(--amber); background:rgba(255,176,0,0.1); color:var(--amber); }
+  button.cta.secondary:hover{ box-shadow:0 0 20px -2px rgba(255,176,0,0.6); }
+
+  #formStatus{ text-align:center; font-size:0.85rem; color:var(--amber); margin-top:1rem; min-height:1.2rem; }
+  .email-note{
+    text-align:center; font-size:0.75rem; color:var(--dim);
+    max-width:540px; margin:0.8rem auto 0; line-height:1.6;
+  }
+
+  footer{
+    position:relative; z-index:10; text-align:center;
+    font-size:0.8rem; letter-spacing:0.12em; color:var(--dim);
+    padding-bottom:4vh; text-transform:uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="rain"></div>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+
+<main>
+  <p class="boot">SYSTEM://SPRAWL-NET · CONNECTION SECURE · TRACE PROTOCOLS ACTIVE</p>
+  <h1 class="title">Shadowrun: Anarchy<br>Runner Creation Uplink</h1>
+  <p class="eyebrow">CNSL 5339/6339 — Therapeutic Applications of TTRPGs</p>
+
+  <div class="directive">
+    <h2>Where You Are</h2>
+    <p>
+      It's the 2080s. Magic came back into the world in 2011 — an event called the Awakening —
+      and along with it came dragons, spirits, and metahumanity: elves, dwarves, orks, and trolls,
+      people who were always latent in the population and suddenly weren't anymore. Around the same
+      time, the world's biggest corporations effectively became sovereign nations. They have their
+      own laws, their own armies, and their own city-sized arcologies, and they answer to no
+      government. Between the corporate towers and the parts of the city the corps don't bother
+      policing is <code>the sprawl</code> — where most people, metahuman or not, actually live.
+    </p>
+    <p>
+      Layered over all of it is <code>the Matrix</code>, a fully immersive global data network.
+      Anyone with the right gear (or, for a rare few called technomancers, the right brain) can jack
+      in and move through it like a physical space. And running through everyone's body is
+      <code>Essence</code> — a measure of how intact your original, unmodified self still is.
+      Cyberware (chrome) makes you faster, stronger, or sharper, but every piece of it costs Essence.
+      For anyone Awakened, that matters a lot: your capacity for magic is capped by how much Essence
+      you have left, so chrome and magic are always in tension with each other.
+    </p>
+    <p>
+      A <code>shadowrunner</code> is someone who takes jobs the corps need done but can't be caught
+      doing themselves — corporate espionage, extraction, sabotage, retrieval. It's dangerous,
+      it's illegal, and it pays. That's your character.
+    </p>
+  </div>
+
+  <div class="directive">
+    <h2>How the Dice Work</h2>
+    <p>
+      Shadowrun: Anarchy runs on <code>dice pools</code>. When you attempt something risky, you roll
+      a number of six-sided dice equal to the relevant Attribute plus Skill rating. Every die that
+      lands on a 5 or 6 counts as a hit. Your GM builds an opposing dice pool for whatever's working
+      against you — a guard's reflexes, a locked door's complexity, a spirit's will — and rolls it too.
+      More hits wins the exchange. (Confirm the exact hit threshold and any edition-specific wrinkles
+      against your copy of the Anarchy rulebook — this is the standard version, but printings vary.)
+    </p>
+    <p>
+      Your character sheet isn't just numbers — <code>Cues</code> are short phrases about things your
+      character says or does, and they're just as important as your dice pools for keeping the story
+      moving at the table.
+    </p>
+  </div>
+
+  <!-- ARCHETYPES -->
+  <section class="card">
+    <h3>Choose Your Archetype</h3>
+    <p class="helper">
+      An archetype is a starting lean, not a cage — it just points you toward which Attributes and
+      Skills probably matter most for the kind of runner you want to play.
+    </p>
+    <div class="archetype-grid" id="archetypeGrid"></div>
+  </section>
+
+  <!-- CONCEPT -->
+  <section class="card">
+    <h3>Character Theme</h3>
+    <label class="field-label" for="charName">Runner Name / Alias</label>
+    <input type="text" id="charName" placeholder="e.g. Ferro, Static, Marisol &quot;Ninewire&quot; Cho">
+
+    <label class="field-label" for="charConcept">Character Concept</label>
+    <div class="examples">
+      <strong>A concept is your runner in one gritty sentence.</strong> Some examples:<br>
+      • Ex-corp security who knows exactly how the other side thinks<br>
+      • Street kid who taught themselves to hack because nobody else was going to help<br>
+      • Ganger with a code of honor nobody else believes still exists<br>
+      • Ex-military washout looking for a paycheck and a reason<br>
+      • True believer who thinks this next job finally gets them out of the life
+    </div>
+    <input type="text" id="charConcept" placeholder="e.g. A disgraced corp medic who patches up runners for cred and secrets">
+  </section>
+
+  <!-- METATYPE + AWAKENED/EMERGED -->
+  <section class="card">
+    <h3>Metatype &amp; Aptitude</h3>
+    <label class="field-label" for="metatype">Metatype</label>
+    <select id="metatype">
+      <option value="">— choose a metatype —</option>
+      <option value="Human">Human — adaptable, no strong stat leanings</option>
+      <option value="Elf">Elf — graceful, tends toward Agility and Charisma</option>
+      <option value="Dwarf">Dwarf — sturdy, tends toward Willpower and resilience</option>
+      <option value="Ork">Ork — strong and tough, tends toward Strength</option>
+      <option value="Troll">Troll — massive and hard to put down, tends toward Strength, usually at the cost of Charisma/Logic</option>
+    </select>
+
+    <p class="helper" style="margin-top:1.1rem;">Is your character Awakened (magic) or Emerged (pure Matrix instinct), or neither?</p>
+    <div class="radio-list" id="aptitudeList"></div>
+  </section>
+
+  <!-- TRADITION + SPELLS -->
+  <section class="card" id="magicCard">
+    <h3>Magical Tradition &amp; Spells</h3>
+    <p class="helper">
+      Only relevant if you chose Awakened above — skip this section if you didn't.
+      Every Awakened character works through a <em>tradition</em> — a framework for how they
+      understand and shape magic. Rather than defaulting to a single real-world cultural label,
+      pick the broad approach that fits your character, then talk with your GM about the specific
+      practice, background, or belief system that makes it feel real and grounded rather than generic.
+    </p>
+    <label class="field-label" for="traditionSelect">Tradition</label>
+    <select id="traditionSelect">
+      <option value="">— choose a tradition —</option>
+      <option value="Hermetic (academic, technical, studied like a science)">Hermetic — academic and technical, studied like a science</option>
+      <option value="Spiritual (magic drawn from a personal or ancestral relationship with the world and its spirits)">Spiritual — magic drawn from a personal or ancestral relationship with the world and its spirits</option>
+      <option value="Independent (a self-taught, idiosyncratic approach with no formal school)">Independent — self-taught, with no formal school behind it</option>
+    </select>
+
+    <p class="helper" style="margin-top:1.1rem;">Spells — pick up to 3:</p>
+    <div class="check-list" id="spellList"></div>
+    <div class="counter" id="spellCounter">0 / 3 selected</div>
+  </section>
+
+  <!-- PROGRAMS -->
+  <section class="card" id="programCard">
+    <h3>Matrix Programs</h3>
+    <p class="helper">
+      Most relevant for Deckers or Emerged characters — skip if that's not your build.
+      Whether you're running a cyberdeck or jacking in with nothing but your own mind, you need
+      programs loaded to actually do anything in the Matrix. Pick up to 3.
+    </p>
+    <div class="check-list" id="programList"></div>
+    <div class="counter" id="programCounter">0 / 3 selected</div>
+  </section>
+
+  <!-- DRONE -->
+  <section class="card" id="droneCard">
+    <h3>Drone</h3>
+    <p class="helper">
+      Most relevant for Riggers — skip if that's not your build. Pick the drone you jockey most
+      often. You can always describe more in your gear list.
+    </p>
+    <select id="droneSelect">
+      <option value="">— choose a drone —</option>
+      <option value="Microdrone (palm-sized, surveillance and eavesdropping)">Microdrone — palm-sized, built for surveillance and eavesdropping</option>
+      <option value="Minidrone (small, fast, light recon)">Minidrone — small and fast, good for recon</option>
+      <option value="Rotor drone (aerial, overwatch and pursuit)">Rotor drone — aerial, good for overwatch and pursuit</option>
+      <option value="Combat drone (armed, built to fight)">Combat drone — armed and armored, built to fight</option>
+      <option value="Anthroform drone (humanoid, can pass in public at a glance)">Anthroform drone — humanoid shape, can pass in public at a glance</option>
+    </select>
+  </section>
+
+  <!-- ATTRIBUTES -->
+  <section class="card">
+    <h3>Attributes</h3>
+    <p class="helper">
+      Every Attribute starts at 1. You have <strong>12 points</strong> to spread across the five of them
+      — none can go above 6 at creation.
+    </p>
+    <div class="attr-grid" id="attrGrid"></div>
+    <div class="points-counter" id="pointsCounter">Points remaining: 12</div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="card">
+    <h3>Skills</h3>
+    <p class="helper">
+      Skills are what you add to an Attribute to build your dice pool — a Firearms roll uses
+      Agility + Firearms, a Sorcery roll uses Willpower (or Logic) + Sorcery, and so on. Every
+      skill starts at 0. You have <strong>10 points</strong> to spread across them, none higher
+      than 4 at creation. You don't need to put points in all of them — most runners are decent
+      at a handful of things and rely on their team for the rest.
+    </p>
+    <div class="attr-grid" id="skillGrid"></div>
+    <div class="points-counter" id="skillPointsCounter">Points remaining: 10</div>
+
+    <label class="field-label" style="margin-top:1.2rem; display:block;" for="knowledgeSkill">
+      Knowledge / Specialty (free — anything your character just happens to know a lot about)
+    </label>
+    <input type="text" id="knowledgeSkill" placeholder="e.g. Corp politics, street chemistry, old-world jazz records">
+  </section>
+
+  <!-- CUES -->
+  <section class="card">
+    <h3>Cues</h3>
+    <p class="helper">Short phrases — things your character says or does — that bring them to life at the table.</p>
+    <div class="examples">
+      <strong>A few ideas:</strong> "Never takes their gloves off in front of strangers." ·
+      "Always counts the exits first." · "Doesn't trust anyone in a suit." ·
+      "Keeps a photo of someone taped inside their jacket." · "Talks to their gear like it's alive."
+    </div>
+    <textarea id="cuesText" placeholder="e.g. Chews the same brand of gum their old squad used to share. Won't work a job that involves kids."></textarea>
+  </section>
+
+  <!-- QUALITIES -->
+  <section class="card">
+    <h3>Qualities</h3>
+    <p class="helper">Choose <strong>2 positive</strong> Qualities and <strong>1 negative</strong> Quality.</p>
+    <div class="check-list" id="posQualList"></div>
+    <div class="counter" id="posQualCounter">0 / 2 selected</div>
+    <p class="helper" style="margin-top:1.2rem;">Negative — pick one:</p>
+    <div class="radio-list" id="negQualList"></div>
+    <div class="points-counter" id="essenceCounter" style="margin-top:1rem;">Essence remaining: 6.0 / 6.0</div>
+    <p class="helper" id="essenceWarning" style="display:none; color:var(--red); margin-top:0.5rem;"></p>
+  </section>
+
+  <!-- BACKGROUND QUESTIONS -->
+  <section class="card">
+    <h3>A Few Questions</h3>
+    <p class="helper">Short answers are fine — these are just to give your GM (and you) something to work with.</p>
+    <div id="questionBlock"></div>
+  </section>
+
+  <!-- GEAR -->
+  <section class="card">
+    <h3>Loadout</h3>
+    <p class="helper">
+      Shadowrun gear lists can get enormous — here's a trimmed-down starting kit instead of the whole catalog.
+    </p>
+    <label class="field-label" for="weaponSelect">Primary Weapon</label>
+    <select id="weaponSelect">
+      <option value="">— choose a weapon —</option>
+      <option value="Combat knife (melee, quiet)">Combat knife — melee, quiet</option>
+      <option value="Monofilament whip (melee, brutal)">Monofilament whip — melee, brutal</option>
+      <option value="Combat axe (melee, heavy damage)">Combat axe — melee, heavy damage</option>
+      <option value="Shock gloves (melee, nonlethal stun)">Shock gloves — melee, nonlethal stun</option>
+      <option value="Heavy pistol (ranged, reliable sidearm)">Heavy pistol — ranged, reliable sidearm</option>
+      <option value="Silenced pistol (ranged, subtle)">Silenced pistol — ranged, subtle</option>
+      <option value="SMG (ranged, close-quarters)">SMG — ranged, close-quarters</option>
+      <option value="Assault rifle (ranged, versatile firepower)">Assault rifle — ranged, versatile firepower</option>
+      <option value="Sniper rifle (ranged, long-range precision)">Sniper rifle — ranged, long-range precision</option>
+      <option value="Crossbow (ranged, near-silent)">Crossbow — ranged, near-silent</option>
+      <option value="Taser (ranged, nonlethal)">Taser — ranged, nonlethal</option>
+      <option value="Frag grenade (area, heavy and loud)">Frag grenade — area effect, heavy and loud</option>
+    </select>
+
+    <label class="field-label" for="armorSelect" style="margin-top:1rem; display:block;">Armor</label>
+    <select id="armorSelect">
+      <option value="">— choose armor —</option>
+      <option value="Street clothes (no bonus, doesn't look armed)">Street clothes — no bonus, doesn't look armed</option>
+      <option value="Armored jacket (light protection, still passes as casual)">Armored jacket — light protection, still passes as casual</option>
+      <option value="Full body armor (heavy protection, conspicuous)">Full body armor — heavy protection, conspicuous</option>
+    </select>
+
+    <p class="helper" style="margin-top:1.1rem;">Gear — pick up to 4:</p>
+    <div class="check-list" id="gearList"></div>
+    <div class="counter" id="gearCounter">0 / 4 selected</div>
+  </section>
+
+  <!-- CONTACTS -->
+  <section class="card">
+    <h3>Contacts</h3>
+    <p class="helper">Who does your runner know in the sprawl? A name and what they do for you is enough.</p>
+    <div class="examples">
+      <strong>Examples:</strong> "Doc Ferro — back-alley cybersurgeon, owes you one." ·
+      "Nyx — fixer who lines up jobs, doesn't ask questions." · "Sable — runs a chop shop, good for parts and rumors."
+    </div>
+    <textarea id="contactsText" placeholder="e.g. Ozzie — bartender at the Rusted Choir, hears everything that happens on the east side."></textarea>
+  </section>
+
+  <section class="card">
+    <h3>Send It In</h3>
+    <label class="field-label" for="studentEmail">Your Email (optional — we'll CC you a copy)</label>
+    <input type="text" id="studentEmail" placeholder="e.g. jsmith12@go.tarleton.edu">
+  </section>
+
+  <div class="cta-row">
+    <button class="cta" id="generateBtn">Download PDF Character Sheet</button>
+    <button class="cta secondary" id="emailBtn">Email My Character</button>
+  </div>
+  <p class="email-note">
+    "Email My Character" opens your email app addressed to Dr. Holliman, with a text summary
+    pre-filled and, if you entered your email above, CC'd to you as well. Browsers won't let a
+    webpage silently attach a file to an email for security reasons — download the PDF first,
+    then attach it before you hit send.
+  </p>
+  <div id="formStatus"></div>
+</main>
+
+<footer>THE SPRAWL DOESN'T SLEEP. NEITHER DO YOU.</footer>
+
+<script>
+  // ---------- ARCHETYPES ----------
+  const ARCHETYPES = [
+    {t:"Street Samurai", s:"Cyber-enhanced muscle. Leans on Strength/Agility, Close and Ranged Combat."},
+    {t:"Decker", s:"Rides the Matrix from the shadows. Leans on Logic, Electronics/Cracking, needs a cyberdeck."},
+    {t:"Face", s:"The team's talker and con artist. Leans on Charisma, Influence, deep in contacts."},
+    {t:"Rigger", s:"Runs the job through drones and vehicles. Leans on Logic/Agility, Piloting."},
+    {t:"Mage", s:"Channels magic through spells and spirit work. Awakened only. Leans on Willpower/Charisma."},
+    {t:"Adept", s:"Magic turned inward — a body pushed past normal limits. Awakened only. Leans on Agility/Strength."}
+  ];
+  const archGrid = document.getElementById("archetypeGrid");
+  ARCHETYPES.forEach((a,i)=>{
+    archGrid.innerHTML += `<label class="arch-opt" for="arch${i}">
+      <input type="radio" name="archetype" id="arch${i}" value="${a.t}">
+      <span><span class="name">${a.t}</span><span class="sub">${a.s}</span></span>
+    </label>`;
+  });
+
+  // ---------- AWAKENED/EMERGED ----------
+  const APTITUDES = [
+    {t:"Mundane", s:"No magic, no Matrix-instinct — just skill, grit, and gear."},
+    {t:"Awakened", s:"Can perceive and channel magic — spells, spirits, or physical Adept powers."},
+    {t:"Emerged", s:"A technomancer — interfaces with the Matrix using their own mind, no deck required."}
+  ];
+  const aptWrap = document.getElementById("aptitudeList");
+  APTITUDES.forEach((a,i)=>{
+    aptWrap.innerHTML += optHTML("aptitude", `apt${i}`, a.t, a.s, "radio");
+  });
+
+  // ---------- SPELLS ----------
+  const SPELLS = [
+    {t:"Manabolt", s:"Direct offensive blast of magical force."},
+    {t:"Heal", s:"Mends physical wounds."},
+    {t:"Armor", s:"Wraps the target in a magical defensive barrier."},
+    {t:"Invisibility", s:"Renders the target hard to see."},
+    {t:"Levitate", s:"Lifts and moves a person or object through the air."},
+    {t:"Detect Life", s:"Senses living things nearby, even through walls."},
+    {t:"Increase Reflexes", s:"Speeds up the target's reactions."},
+    {t:"Control Thoughts", s:"Plants a suggestion in a target's mind."},
+    {t:"Barrier", s:"Conjures a physical wall or shield from nothing."},
+    {t:"Stunbolt", s:"A nonlethal jolt of magical force that knocks a target out."}
+  ];
+  buildCheckboxes("spellList", SPELLS, "spell", 3, "spellCounter", true);
+
+  // ---------- PROGRAMS ----------
+  const PROGRAMS = [
+    {t:"Attack", s:"Deals damage directly to a target's system or persona."},
+    {t:"Armor", s:"Shields your own Matrix presence from harm."},
+    {t:"Stealth", s:"Keeps your activity from showing up on security logs."},
+    {t:"Scan", s:"Reveals nearby devices, personas, and their defenses."},
+    {t:"Exploit", s:"Cracks passwords and breaks through locked systems."},
+    {t:"Edit", s:"Alters or plants data without leaving obvious traces."},
+    {t:"Medic", s:"Repairs damage to your deck or persona mid-run."},
+    {t:"Decrypt", s:"Breaks encrypted files and communications."}
+  ];
+  buildCheckboxes("programList", PROGRAMS, "program", 3, "programCounter", true);
+
+  // ---------- ATTRIBUTES ----------
+  const ATTRS = ["Strength","Agility","Willpower","Logic","Charisma"];
+  const attrGrid = document.getElementById("attrGrid");
+  ATTRS.forEach(a=>{
+    attrGrid.innerHTML += `<div class="attr-block">
+      <label for="attr-${a}">${a}</label>
+      <input type="number" id="attr-${a}" min="1" max="6" value="1" data-attr="${a}">
+    </div>`;
+  });
+  const attrInputs = () => Array.from(document.querySelectorAll("[data-attr]"));
+  const POOL = 12;
+  function refreshPoints(){
+    const spent = attrInputs().reduce((sum,el)=> sum + (parseInt(el.value||1,10) - 1), 0);
+    const remaining = POOL - spent;
+    const counter = document.getElementById("pointsCounter");
+    counter.textContent = `Points remaining: ${remaining}`;
+    counter.style.color = remaining < 0 ? "var(--red)" : "var(--amber)";
+  }
+  attrInputs().forEach(el=>{
+    el.addEventListener("input", ()=>{
+      let v = parseInt(el.value||1,10);
+      if(v<1) v=1; if(v>6) v=6;
+      el.value = v;
+      refreshPoints();
+    });
+  });
+  refreshPoints();
+
+  // ---------- SKILLS ----------
+  const SKILLS = [
+    "Athletics","Close Combat","Firearms","Heavy Weapons","Projectile Weapons",
+    "Stealth","Escape Artist","Con","Intimidation","Negotiation",
+    "Electronics","Engineering","Biotech","Hacking",
+    "Sorcery","Conjuring","Astral Combat",
+    "Piloting (Ground)","Piloting (Other)","Tasking","Tracking"
+  ];
+  const skillGrid = document.getElementById("skillGrid");
+  SKILLS.forEach(s=>{
+    const id = s.replace(/[^a-z0-9]/gi,"");
+    skillGrid.innerHTML += `<div class="attr-block">
+      <label for="skill-${id}">${s}</label>
+      <input type="number" id="skill-${id}" min="0" max="4" value="0" data-skill="${s}">
+    </div>`;
+  });
+  const skillInputs = () => Array.from(document.querySelectorAll("[data-skill]"));
+  const SKILL_POOL = 10;
+  function refreshSkillPoints(){
+    const spent = skillInputs().reduce((sum,el)=> sum + parseInt(el.value||0,10), 0);
+    const remaining = SKILL_POOL - spent;
+    const counter = document.getElementById("skillPointsCounter");
+    counter.textContent = `Points remaining: ${remaining}`;
+    counter.style.color = remaining < 0 ? "var(--red)" : "var(--amber)";
+  }
+  skillInputs().forEach(el=>{
+    el.addEventListener("input", ()=>{
+      let v = parseInt(el.value||0,10);
+      if(v<0) v=0; if(v>4) v=4;
+      el.value = v;
+      refreshSkillPoints();
+    });
+  });
+  refreshSkillPoints();
+
+  // ---------- QUALITIES ----------
+  const POS_QUALITIES = [
+    {t:"Wired Reflexes", s:"[Cyberware] +2 dice on Initiative or Reaction rolls to act first. Costs Essence."},
+    {t:"Silver Tongue", s:"+2 dice on Charisma rolls to negotiate or deceive."},
+    {t:"Ghost in the Machine", s:"+2 dice on Matrix/hacking rolls when working alone."},
+    {t:"Iron Constitution", s:"+2 dice to resist physical damage or toxins."},
+    {t:"I Know a Guy", s:"Start with one extra Contact who owes you a favor."},
+    {t:"Steady Hands", s:"+2 dice on called shots or fine motor tasks under pressure."},
+    {t:"Danger Sense", s:"Once per session, act before Initiative in a surprise situation."},
+    {t:"Street Cred", s:"+2 dice on Reputation or Intimidation checks in the sprawl."}
+  ];
+  const NEG_QUALITIES = [
+    {t:"Wanted", s:"A corp or gang has a standing grudge against you; they surface at the worst times."},
+    {t:"Chrome Junkie", s:"[Cyberware] You're running more chrome than is safe; -2 dice when your Essence is strained. Costs Essence."},
+    {t:"SINless", s:"No System Identification Number; -2 dice on anything requiring legit ID or credit."},
+    {t:"Debt", s:"You owe someone dangerous nuyen, and they collect on their own schedule."},
+    {t:"Paranoid", s:"-2 dice on Charisma checks with anyone you've just met."},
+    {t:"Glitchy Gear", s:"Your kit is secondhand and unreliable; on a roll of all 1s, something fails."},
+    {t:"Bad Rep", s:"Word's out about a job gone wrong; certain fixers won't work with you anymore."}
+  ];
+  buildCheckboxes("posQualList", POS_QUALITIES, "posQual", 2, "posQualCounter", true);
+  const negWrap = document.getElementById("negQualList");
+  NEG_QUALITIES.forEach((q,i)=>{
+    negWrap.innerHTML += `<label class="opt negative" for="negQual${i}">
+      <input type="radio" name="negQual" id="negQual${i}" value="${q.t}">
+      <span><span class="opt-title">${q.t}</span><span class="opt-sub"> — ${q.s}</span></span>
+    </label>`;
+  });
+
+  const ESSENCE_COST = { "Wired Reflexes": 1.0, "Chrome Junkie": 2.0 };
+  function updateEssence(){
+    const selected = [...getChecked("posQual"), getRadio("negQual")];
+    const cost = selected.reduce((sum, t)=> sum + (ESSENCE_COST[t] || 0), 0);
+    const remaining = Math.max(0, 6 - cost);
+    const counter = document.getElementById("essenceCounter");
+    counter.textContent = `Essence remaining: ${remaining.toFixed(1)} / 6.0`;
+    counter.style.color = remaining < 4 ? "var(--red)" : "var(--amber)";
+    const warn = document.getElementById("essenceWarning");
+    const isAwakened = getRadio("aptitude") === "Awakened";
+    if(isAwakened && cost > 0){
+      warn.style.display = "";
+      warn.textContent = `Heads up: your Magic rating is capped by Essence. This chrome has cost you ${cost.toFixed(1)} Essence — your magic will run weaker for it. That trade-off is core to how the setting works.`;
+    } else {
+      warn.style.display = "none";
+    }
+  }
+  document.querySelectorAll('input[name="posQual"], input[name="negQual"], input[name="aptitude"]').forEach(el=>{
+    el.addEventListener("change", updateEssence);
+  });
+  updateEssence();
+
+  // ---------- BACKGROUND QUESTIONS ----------
+  const QUESTIONS = [
+    {id:"q1", label:"What did your character do before they became a runner?"},
+    {id:"q2", label:"Who do they owe — or who owes them?"},
+    {id:"q3", label:"What's the one line they won't cross, even for a big payday?"},
+    {id:"q4", label:"Who's the person they'd call if a job went sideways?"}
+  ];
+  const qWrap = document.getElementById("questionBlock");
+  QUESTIONS.forEach(q=>{
+    qWrap.innerHTML += `<div class="q-block">
+      <label for="${q.id}">${q.label}</label>
+      <textarea id="${q.id}" style="min-height:60px;"></textarea>
+    </div>`;
+  });
+
+  // ---------- GEAR ----------
+  const GEAR = [
+    "Fake SIN","Cyberdeck","Encrypted commlink","Medkit","Grapple line",
+    "Micro-drone","Lockpick set","Burner phone","Trauma patch","Datachip cache"
+  ];
+  buildCheckboxes("gearList", GEAR, "gear", 4, "gearCounter");
+
+  // ---------- helpers ----------
+  function optHTML(name, id, title, sub, type){
+    return `<label class="opt" for="${id}">
+      <input type="${type}" name="${name}" id="${id}" value="${title.replace(/"/g,'&quot;')}">
+      <span><span class="opt-title">${title}</span>${sub ? `<span class="opt-sub"> — ${sub}</span>` : ""}</span>
+    </label>`;
+  }
+  function buildCheckboxes(containerId, items, groupName, max, counterId, hasSub){
+    const wrap = document.getElementById(containerId);
+    items.forEach((item,i)=>{
+      const title = hasSub ? item.t : item;
+      const sub = hasSub ? item.s : "";
+      wrap.innerHTML += optHTML(groupName, `${groupName}${i}`, title, sub, "checkbox");
+    });
+    const boxes = () => Array.from(wrap.querySelectorAll(`input[name="${groupName}"]`));
+    const counter = document.getElementById(counterId);
+    function update(){
+      const checked = boxes().filter(b=>b.checked);
+      counter.textContent = `${checked.length} / ${max} selected`;
+      boxes().forEach(b=>{ if(!b.checked) b.disabled = checked.length >= max; });
+    }
+    boxes().forEach(b=> b.addEventListener("change", update));
+    update();
+  }
+  function getChecked(name){
+    return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(b=>b.value);
+  }
+  function getRadio(name){
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : "";
+  }
+
+  function collectCharacter(){
+    const stats = {};
+    ATTRS.forEach(a=>{ stats[a] = document.getElementById(`attr-${a}`).value; });
+    const spent = attrInputs().reduce((sum,el)=> sum + (parseInt(el.value||1,10) - 1), 0);
+    return {
+      name: document.getElementById("charName").value.trim(),
+      concept: document.getElementById("charConcept").value.trim(),
+      archetype: getRadio("archetype"),
+      metatype: document.getElementById("metatype").value,
+      aptitude: getRadio("aptitude"),
+      stats, pointsOk: spent <= POOL,
+      skills: SKILLS.reduce((obj,s)=>{ const id=s.replace(/[^a-z0-9]/gi,""); obj[s]=parseInt(document.getElementById(`skill-${id}`).value||0,10); return obj; }, {}),
+      skillPointsOk: skillInputs().reduce((sum,el)=> sum + parseInt(el.value||0,10), 0) <= SKILL_POOL,
+      knowledgeSkill: document.getElementById("knowledgeSkill").value.trim(),
+      cues: document.getElementById("cuesText").value.trim(),
+      posQual: getChecked("posQual"),
+      negQual: getRadio("negQual"),
+      essenceCost: [...getChecked("posQual"), getRadio("negQual")].reduce((sum,t)=> sum + (ESSENCE_COST[t]||0), 0),
+      tradition: document.getElementById("traditionSelect").value,
+      spells: getChecked("spell"),
+      programs: getChecked("program"),
+      drone: document.getElementById("droneSelect").value,
+      questions: QUESTIONS.map(q=>({label:q.label, val: document.getElementById(q.id).value.trim()})),
+      weapon: document.getElementById("weaponSelect").value,
+      armor: document.getElementById("armorSelect").value,
+      gear: getChecked("gear"),
+      contacts: document.getElementById("contactsText").value.trim(),
+      studentEmail: document.getElementById("studentEmail").value.trim()
+    };
+  }
+
+  function validate(c){
+    const missing = [];
+    if(!c.name) missing.push("Runner Name");
+    if(!c.concept) missing.push("Character Concept");
+    if(!c.archetype) missing.push("Archetype");
+    if(!c.metatype) missing.push("Metatype");
+    if(!c.aptitude) missing.push("Magic/Matrix Aptitude");
+    if(!c.pointsOk) missing.push("Attribute points (you've overspent your 12)");
+    if(!c.skillPointsOk) missing.push("Skill points (you've overspent your 10)");
+    if(!c.cues) missing.push("Cues");
+    if(c.posQual.length < 2) missing.push("2 Positive Qualities");
+    if(!c.negQual) missing.push("Negative Quality");
+    if(!c.weapon) missing.push("Primary Weapon");
+    if(!c.armor) missing.push("Armor");
+    return missing;
+  }
+
+  document.getElementById("generateBtn").addEventListener("click", ()=>{
+    const c = collectCharacter();
+    const missing = validate(c);
+    const status = document.getElementById("formStatus");
+    if(missing.length){ status.textContent = "Still needed: " + missing.join(", "); return; }
+    status.textContent = "Compiling character sheet...";
+    buildPDF(c);
+    status.textContent = "Downloaded! Check your Downloads folder.";
+  });
+
+  document.getElementById("emailBtn").addEventListener("click", ()=>{
+    const c = collectCharacter();
+    const missing = validate(c);
+    const status = document.getElementById("formStatus");
+    if(missing.length){ status.textContent = "Still needed: " + missing.join(", "); return; }
+    const EMAIL_TO = "holliman@tarleton.edu";
+    const subject = encodeURIComponent(`Shadowrun: Anarchy Character: ${c.name}`);
+    const body = encodeURIComponent(buildSummaryText(c));
+    const cc = c.studentEmail ? `&cc=${encodeURIComponent(c.studentEmail)}` : "";
+    window.location.href = `mailto:${EMAIL_TO}?subject=${subject}&body=${body}${cc}`;
+  });
+
+  function buildSummaryText(c){
+    return [
+      `SHADOWRUN: ANARCHY — CHARACTER SUMMARY`,
+      `Name: ${c.name}`,
+      `Concept: ${c.concept}`,
+      `Archetype: ${c.archetype}`,
+      `Metatype: ${c.metatype}`,
+      `Aptitude: ${c.aptitude}`,
+      ``,
+      `ATTRIBUTES`,
+      ...ATTRS.map(a=>`  ${a}: ${c.stats[a]}`),
+      ``,
+      `SKILLS`,
+      ...Object.entries(c.skills).filter(([k,v])=>v>0).map(([k,v])=>`  ${k}: ${v}`),
+      c.knowledgeSkill ? `Knowledge: ${c.knowledgeSkill}` : null,
+      ``,
+      `Cues: ${c.cues}`,
+      `Positive Qualities: ${c.posQual.join(" | ")}`,
+      `Negative Quality: ${c.negQual}`,
+      `Essence remaining: ${(6 - c.essenceCost).toFixed(1)} / 6.0`,
+      c.tradition ? `Tradition: ${c.tradition}` : null,
+      c.spells.length ? `Spells: ${c.spells.join(", ")}` : null,
+      c.programs.length ? `Programs: ${c.programs.join(", ")}` : null,
+      c.drone ? `Drone: ${c.drone}` : null,
+      ``,
+      ...c.questions.map(q=>`${q.label}\n  ${q.val || "—"}`),
+      ``,
+      `Weapon: ${c.weapon}`,
+      `Armor: ${c.armor}`,
+      `Gear: ${c.gear.join(", ") || "—"}`,
+      `Contacts: ${c.contacts || "—"}`,
+      ``,
+      `(Full PDF character sheet attached — remember to attach the downloaded PDF before sending.)`
+    ].filter(line => line !== null).join("\n");
+  }
+
+  function buildPDF(c){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"pt", format:"letter" });
+    const pageW = doc.internal.pageSize.getWidth();
+    let y = 50;
+
+    doc.setFillColor(11,18,16);
+    doc.rect(0,0,pageW,70,"F");
+    doc.setTextColor(255,255,255);
+    doc.setFont("courier","bold");
+    doc.setFontSize(20);
+    doc.text("SHADOWRUN: ANARCHY", pageW/2, 30, {align:"center"});
+    doc.setFontSize(10);
+    doc.setFont("courier","normal");
+    doc.text("RUNNER SHEET  ·  CNSL 5339/6339", pageW/2, 48, {align:"center"});
+
+    doc.setTextColor(20,20,20);
+    y = 95;
+    doc.setFontSize(14);
+    doc.setFont("helvetica","bold");
+    doc.text(c.name, 50, y);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(10);
+    doc.text(`${c.metatype} · ${c.archetype} · ${c.aptitude}`, pageW-50, y, {align:"right"});
+    y += 16;
+    doc.setFontSize(11);
+    doc.setFont("helvetica","italic");
+    doc.text(doc.splitTextToSize(c.concept, pageW-100), 50, y);
+    y += 26;
+
+    doc.setDrawColor(180,180,180);
+    doc.line(50,y,pageW-50,y);
+    y += 20;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("ATTRIBUTES", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    ATTRS.forEach(a=>{ doc.text(`${a}:`, 55, y); doc.text(String(c.stats[a]), 170, y); y += 15; });
+    y += 8;
+
+    const trainedSkills = Object.entries(c.skills).filter(([k,v])=>v>0);
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("SKILLS", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    if(trainedSkills.length){
+      let col = 0;
+      const startY = y;
+      trainedSkills.forEach(([k,v],i)=>{
+        const colX = 55 + (col * 250);
+        doc.text(`${k}: ${v}`, colX, y);
+        y += 14;
+        if((i+1) % 8 === 0){ col++; y = startY; }
+      });
+      y = startY + Math.min(trainedSkills.length, 8) * 14 + 6;
+    } else {
+      doc.text("—", 55, y); y += 14;
+    }
+    if(c.knowledgeSkill){
+      doc.text(doc.splitTextToSize("Knowledge: " + c.knowledgeSkill, pageW-110), 55, y); y += 15;
+    }
+    y += 8;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("CUES", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    let lines = doc.splitTextToSize(c.cues, pageW-110);
+    doc.text(lines, 55, y); y += 14*lines.length + 10;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("QUALITIES", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    doc.text("Positive: " + c.posQual.join(", "), 55, y); y += 15;
+    doc.text("Negative: " + c.negQual, 55, y); y += 15;
+    doc.text(`Essence remaining: ${(6 - c.essenceCost).toFixed(1)} / 6.0`, 55, y); y += 24;
+
+    if(c.tradition || c.spells.length){
+      doc.setFont("helvetica","bold"); doc.setFontSize(12);
+      doc.text("MAGIC", 50, y); y += 16;
+      doc.setFont("helvetica","normal"); doc.setFontSize(10);
+      if(c.tradition){ doc.text(doc.splitTextToSize("Tradition: " + c.tradition, pageW-110), 55, y); y += 15; }
+      if(c.spells.length){ doc.text(doc.splitTextToSize("Spells: " + c.spells.join(", "), pageW-110), 55, y); y += 15; }
+      y += 9;
+    }
+
+    if(c.programs.length){
+      doc.setFont("helvetica","bold"); doc.setFontSize(12);
+      doc.text("MATRIX PROGRAMS", 50, y); y += 16;
+      doc.setFont("helvetica","normal"); doc.setFontSize(10);
+      doc.text(doc.splitTextToSize(c.programs.join(", "), pageW-110), 55, y); y += 24;
+    }
+
+    if(c.drone){
+      doc.setFont("helvetica","bold"); doc.setFontSize(12);
+      doc.text("DRONE", 50, y); y += 16;
+      doc.setFont("helvetica","normal"); doc.setFontSize(10);
+      doc.text(doc.splitTextToSize(c.drone, pageW-110), 55, y); y += 24;
+    }
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("LOADOUT", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    doc.text(doc.splitTextToSize("Weapon: " + c.weapon, pageW-110), 55, y); y += 15;
+    doc.text(doc.splitTextToSize("Armor: " + c.armor, pageW-110), 55, y); y += 15;
+    doc.text(doc.splitTextToSize("Gear: " + (c.gear.join(", ") || "—"), pageW-110), 55, y); y += 24;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("CONTACTS", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    lines = doc.splitTextToSize(c.contacts || "—", pageW-110);
+    doc.text(lines, 55, y); y += 14*lines.length + 14;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("BACKGROUND", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(9);
+    c.questions.forEach(q=>{
+      if(y > 700){ doc.addPage(); y = 50; }
+      doc.setFont("helvetica","bold");
+      doc.text(doc.splitTextToSize(q.label, pageW-110), 55, y);
+      y += 13;
+      doc.setFont("helvetica","normal");
+      const a = doc.splitTextToSize(q.val || "—", pageW-110);
+      doc.text(a, 55, y);
+      y += 13*a.length + 8;
+    });
+
+    doc.setFontSize(8);
+    doc.setTextColor(140,140,140);
+    doc.text("Generated for Therapeutic Applications of TTRPGs — Tarleton State University", pageW/2, 780, {align:"center"});
+
+    const fileName = c.name.replace(/[^a-z0-9]/gi,"_") || "runner";
+    doc.save(`${fileName}_ShadowrunAnarchy.pdf`);
+  }
+</script>
+
+</body>
+</html>
 
