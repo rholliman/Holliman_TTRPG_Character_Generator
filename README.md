@@ -1,2 +1,2 @@
 # TSU_Hunter_Character_Generator
-This repository allows you to create a character using Hunter: The Reckoning V5 Rules
+A character generator for CNSL 5339/6339 Therapeutic Applications of Tabletop Role-Playing Games
