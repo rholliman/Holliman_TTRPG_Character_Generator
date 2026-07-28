@@ -1,1 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hunter: The Reckoning — Vigil Intake</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --void:#0c0908;
+    --panel:#171110;
+    --line: rgba(184,147,74,0.16);
+    --blood:#9a1b2f;
+    --blood-bright:#c22a3f;
+    --gold:#b8934a;
+    --bone:#e9ddc9;
+    --dim:#8e7c6c;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    background:var(--void);
+    color:var(--bone);
+    font-family:'EB Garamond', serif;
+    min-height:100%;
+  }
+
+  .grain{
+    position:fixed; inset:0; z-index:6; pointer-events:none;
+    background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 2px, transparent 4px);
+    mix-blend-mode:overlay;
+  }
+  .vignette{
+    position:fixed; inset:0; z-index:5; pointer-events:none;
+    background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.92) 100%);
+  }
+  .candleflicker{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background: radial-gradient(ellipse at 50% 10%, rgba(154,27,47,0.14), transparent 60%);
+    animation: flicker 6s ease-in-out infinite;
+  }
+  @keyframes flicker{
+    0%,100%{ opacity:0.9; } 45%{ opacity:0.6; } 50%{ opacity:1; } 78%{ opacity:0.7; }
+  }
+
+  main{
+    position:relative; z-index:10;
+    max-width:840px;
+    margin:0 auto;
+    padding:6vh 5vw 10vh;
+  }
+
+  h1.title{
+    font-family:'Cinzel', serif;
+    font-weight:800;
+    font-size:clamp(1.3rem, 4vw, 2.2rem);
+    text-align:center;
+    letter-spacing:0.05em;
+    color:var(--bone);
+    text-shadow: 0 0 14px rgba(154,27,47,0.55);
+    margin:0 0 0.4rem;
+    line-height:1.4;
+  }
+  .eyebrow{
+    text-align:center;
+    font-family:'Cinzel', serif;
+    font-size:0.8rem;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:2.6rem;
+  }
+  .divider{
+    text-align:center;
+    color:var(--blood);
+    letter-spacing:0.5em;
+    font-size:0.9rem;
+    margin:0 0 2.4rem;
+    opacity:0.8;
+  }
+
+  .directive{
+    background:rgba(23,17,16,0.85);
+    border:1px solid var(--line);
+    border-top:2px solid var(--blood);
+    padding:1.3rem 1.5rem;
+    margin-bottom:1.8rem;
+  }
+  .directive h2{
+    font-family:'Cinzel', serif;
+    font-size:1.05rem;
+    letter-spacing:0.06em;
+    color:var(--gold);
+    margin:0 0 0.6rem;
+    text-transform:uppercase;
+  }
+  .directive p{
+    margin:0 0 0.7rem;
+    font-size:0.98rem;
+    line-height:1.75;
+    color:var(--bone);
+  }
+  .directive p:last-child{ margin-bottom:0; }
+  .directive em{ color:var(--blood-bright); font-style:italic; }
+
+  section.card{
+    background:rgba(23,17,16,0.78);
+    border:1px solid var(--line);
+    padding:1.6rem 1.6rem 1.8rem;
+    margin-bottom:1.5rem;
+  }
+  section.card h3{
+    font-family:'Cinzel', serif;
+    font-size:1.15rem;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    margin:0 0 0.4rem;
+    color:var(--gold);
+  }
+  section.card .helper{
+    font-size:0.92rem;
+    color:var(--dim);
+    line-height:1.7;
+    margin-bottom:1rem;
+  }
+  section.card .helper em{ color:var(--blood-bright); font-style:italic; }
+
+  label.field-label{
+    display:block;
+    font-size:0.8rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--dim);
+    margin-bottom:0.35rem;
+  }
+
+  input[type="text"], textarea, select{
+    width:100%;
+    padding:0.7rem 0.85rem;
+    border-radius:2px;
+    border:1px solid var(--line);
+    background:rgba(0,0,0,0.25);
+    color:var(--bone);
+    font-family:'EB Garamond', serif;
+    font-size:1rem;
+  }
+  input[type="text"]{ margin-bottom:1.1rem; }
+  textarea{ resize:vertical; min-height:95px; line-height:1.6; }
+  input:focus, textarea:focus, select:focus{ outline:1px solid var(--blood-bright); outline-offset:1px; }
+  select option{ background:var(--panel); color:var(--bone); }
+
+  .examples{
+    background:rgba(0,0,0,0.2);
+    border-left:3px solid var(--gold);
+    padding:0.8rem 1rem;
+    font-size:0.9rem;
+    line-height:1.75;
+    color:var(--bone);
+    margin-bottom:1.1rem;
+  }
+  .examples strong{ color:var(--gold); }
+
+  .archetype-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:0.9rem;
+  }
+  @media (max-width:640px){ .archetype-grid{ grid-template-columns:1fr; } }
+  .arch-opt{
+    display:flex; gap:0.6rem; align-items:flex-start;
+    background:rgba(0,0,0,0.2);
+    border:1px solid var(--line);
+    padding:0.7rem 0.8rem;
+    font-size:0.88rem; line-height:1.55;
+  }
+  .arch-opt input{ margin-top:0.25rem; accent-color:var(--blood-bright); }
+  .arch-opt .name{ color:var(--gold); font-weight:700; display:block; letter-spacing:0.02em; }
+  .arch-opt .sub{ color:var(--dim); font-size:0.84rem; }
+
+  .cat-priority{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:1rem;
+    margin-bottom:1.3rem;
+  }
+  @media (max-width:640px){ .cat-priority{ grid-template-columns:1fr; } }
+  .cat-priority div{ display:flex; flex-direction:column; }
+
+  .attr-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+    gap:1rem;
+  }
+  .attr-block{
+    background:rgba(0,0,0,0.2);
+    border:1px solid var(--line);
+    padding:0.7rem 0.8rem;
+  }
+  .attr-block label{
+    font-size:0.82rem;
+    color:var(--gold);
+    letter-spacing:0.03em;
+    display:block;
+    margin-bottom:0.4rem;
+  }
+  .attr-block input[type="number"]{
+    width:100%;
+    padding:0.4rem;
+    background:rgba(0,0,0,0.35);
+    border:1px solid var(--line);
+    color:var(--bone);
+    font-family:'EB Garamond', serif;
+    font-size:1.1rem;
+    text-align:center;
+  }
+  .cat-group{ margin-bottom:1.4rem; }
+  .cat-group h4{
+    font-family:'Cinzel', serif;
+    font-size:0.85rem;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--blood-bright);
+    margin:0 0 0.6rem;
+  }
+  .points-counter{
+    font-size:0.88rem;
+    color:var(--gold);
+    margin-top:0.6rem;
+  }
+
+  .check-list, .radio-list{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:0.55rem 1rem;
+  }
+  @media (max-width:640px){ .check-list, .radio-list{ grid-template-columns:1fr; } }
+  .opt{
+    display:flex; align-items:flex-start; gap:0.55rem;
+    background:rgba(0,0,0,0.2);
+    border:1px solid var(--line);
+    padding:0.55rem 0.7rem;
+    font-size:0.88rem; line-height:1.55;
+  }
+  .opt input{ margin-top:0.2rem; accent-color:var(--blood-bright); flex-shrink:0; }
+  .opt.negative input{ accent-color:var(--blood); }
+  .opt .opt-title{ color:var(--bone); font-weight:700; display:block; }
+  .opt .opt-sub{ color:var(--dim); font-size:0.82rem; }
+
+  .counter{ font-size:0.82rem; color:var(--gold); margin:0.6rem 0 0; }
+
+  .q-block{ margin-bottom:1rem; }
+  .q-block label{
+    display:block; font-size:0.9rem; color:var(--gold);
+    margin-bottom:0.4rem; line-height:1.5;
+  }
+
+  .derived-row{
+    display:flex; gap:1.5rem; flex-wrap:wrap;
+    background:rgba(0,0,0,0.2);
+    border:1px solid var(--line);
+    padding:0.9rem 1.1rem;
+    margin-top:1rem;
+  }
+  .derived-row div{ font-size:0.9rem; color:var(--bone); }
+  .derived-row strong{ color:var(--gold); display:block; font-family:'Cinzel', serif; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:0.2rem; }
+
+  .cta-row{
+    display:flex; flex-wrap:wrap; gap:1rem; justify-content:center; margin-top:2rem;
+  }
+  button.cta{
+    font-family:'Cinzel', serif;
+    font-weight:600;
+    font-size:0.92rem;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    padding:0.85rem 1.6rem;
+    border:2px solid var(--blood-bright);
+    background:rgba(154,27,47,0.12);
+    color:var(--bone);
+    cursor:pointer;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  button.cta:hover{ transform:translateY(-2px); box-shadow:0 0 22px -2px rgba(154,27,47,0.6); }
+  button.cta.secondary{ border-color:var(--gold); background:rgba(184,147,74,0.12); }
+  button.cta.secondary:hover{ box-shadow:0 0 22px -2px rgba(184,147,74,0.6); }
+
+  #formStatus{ text-align:center; font-size:0.9rem; color:var(--gold); margin-top:1rem; min-height:1.2rem; }
+  .email-note{
+    text-align:center; font-size:0.8rem; color:var(--dim);
+    max-width:540px; margin:0.8rem auto 0; line-height:1.65;
+  }
+
+  footer{
+    position:relative; z-index:10; text-align:center;
+    font-family:'Cinzel', serif;
+    font-size:0.78rem; letter-spacing:0.16em; color:var(--dim);
+    padding-bottom:4vh; text-transform:uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="candleflicker"></div>
+<div class="vignette"></div>
+<div class="grain"></div>
+
+<main>
+  <h1 class="title">Hunter: The Reckoning</h1>
+  <p class="eyebrow">Fifth Edition · Vigil Intake</p>
+  <p class="divider">✦ ✦ ✦</p>
+
+  <div class="directive">
+    <h2>What You're Walking Into</h2>
+    <p>
+      You are not a vampire, not a werewolf, not a mage. You are just a person — a nurse, a
+      mechanic, a grad student, a bartender — who saw something that shouldn't exist and couldn't
+      un-see it. No one gave you powers. No one is coming to save you. What you have is grit,
+      whatever gear you can get your hands on, and the other people who saw it too.
+    </p>
+    <p>
+      That shared mission is called <em>the Vigil</em>, and the small group you carry it out with
+      is your <em>cell</em>. Hunting monsters as an ordinary human is not a fair fight, and this
+      game is built to make sure you feel that. Every session is a negotiation between how far
+      you're willing to go and how much of yourself you're willing to lose to go there.
+    </p>
+  </div>
+
+  <div class="directive">
+    <h2>How the Dice Work</h2>
+    <p>
+      Roll a pool of ten-sided dice equal to the relevant Attribute plus Skill. Any die that comes
+      up 6 or higher is a success; you need enough successes to beat the difficulty your GM sets.
+    </p>
+    <p>
+      Your Creed lets you add bonus <em>Desperation dice</em> in situations that fit how you hunt.
+      They're powerful, but risky — for every 1 that comes up on a Desperation die, your cell's
+      <em>Danger</em> rating climbs, meaning your quarry gets more aware and more dangerous. And if
+      you fail a roll even after spending Desperation dice, you fall into <em>Despair</em> and lose
+      access to them entirely — until something tied to your <em>Drive</em>, your core reason for
+      hunting, pulls you back.
+    </p>
+  </div>
+
+  <!-- CREED -->
+  <section class="card">
+    <h3>Choose Your Creed</h3>
+    <p class="helper">
+      Your Creed isn't a superpower or a faction badge — it's your method. It determines exactly
+      when you're allowed to spend Desperation dice.
+    </p>
+    <div class="archetype-grid" id="creedGrid"></div>
+  </section>
+
+  <!-- CONCEPT -->
+  <section class="card">
+    <h3>Who Are They?</h3>
+    <label class="field-label" for="charName">Hunter's Name</label>
+    <input type="text" id="charName" placeholder="e.g. Denise Ocampo, night-shift ER nurse">
+
+    <label class="field-label" for="charConcept">Character Concept</label>
+    <div class="examples">
+      <strong>Your concept is your life before this, plus what it's become.</strong> A few examples:<br>
+      • ER nurse who now stitches up wounds she can't explain to anyone<br>
+      • Retired cop who never stopped noticing what didn't add up<br>
+      • College kid whose roommate vanished and everyone else forgot she existed<br>
+      • Pastor whose faith got a lot more literal one night<br>
+      • Mechanic who fixes cars for the cell because it's the one thing that still makes sense
+    </div>
+    <input type="text" id="charConcept" placeholder="e.g. A night-shift ER nurse who's stopped asking her patients follow-up questions">
+
+    <label class="field-label" for="driveText" style="margin-top:0.4rem; display:block;">Drive</label>
+    <div class="examples">
+      <strong>Your Drive is the real reason you keep doing this.</strong> A few examples:<br>
+      • Vengeance — someone or something took from you, and you intend to make that even<br>
+      • Curiosity — you need to understand what's actually out there, whatever it costs<br>
+      • Redemption — you failed someone once, and this is how you live with it<br>
+      • Duty — you made a promise, to a person, a faith, or an institution<br>
+      • Protection — there's a person or a place you've sworn will not be next
+    </div>
+    <input type="text" id="driveText" placeholder="e.g. Redemption — she couldn't save her brother, so she saves strangers instead">
+  </section>
+
+  <!-- ATTRIBUTES -->
+  <section class="card">
+    <h3>Attributes</h3>
+    <p class="helper">
+      Attributes come in three groups: Physical, Social, and Mental. Rank the groups below —
+      your top priority gets <strong>6 dots</strong> to spread among its three Attributes, your
+      second gets <strong>4</strong>, your third gets <strong>3</strong>. Every Attribute starts at
+      1 automatically, and none can go above 4 at creation.
+    </p>
+    <div class="cat-priority" id="attrPriority"></div>
+    <div id="attrGroups"></div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="card">
+    <h3>Skills</h3>
+    <p class="helper">
+      Skills work the same way. Rank Physical, Social, and Mental again (you can rank them
+      differently than you did for Attributes) — top priority gets <strong>11 dots</strong>,
+      second gets <strong>7</strong>, third gets <strong>4</strong>. Skills start at 0, and none
+      can go above 3 at creation.
+    </p>
+    <div class="cat-priority" id="skillPriority"></div>
+    <div id="skillGroups"></div>
+    <label class="field-label" style="margin-top:1.2rem; display:block;" for="specialtiesText">
+      Specialties (up to 3 — a specific edge within a Skill you already have, e.g. "Firearms: Pistols" or "Investigation: Crime Scenes")
+    </label>
+    <input type="text" id="specialtiesText" placeholder="e.g. Medicine: Trauma, Streetwise: Occult Underground, Drive: Evasive Maneuvers">
+    <div class="derived-row" id="derivedStats"></div>
+  </section>
+
+  <!-- EDGES -->
+  <section class="card">
+    <h3>Edges &amp; Perks</h3>
+    <p class="helper">
+      Edges are your practical advantages as a Hunter. Choose <strong>2 Edges</strong>, or choose
+      <strong>1 Edge</strong> and write a Perk describing how you've specialized it — either
+      works.
+    </p>
+    <div class="check-list" id="edgeList"></div>
+    <div class="counter" id="edgeCounter">0 / 2 selected</div>
+    <label class="field-label" style="margin-top:1.2rem; display:block;" for="perkText">
+      Perk (optional — describe how you've specialized one of your Edges)
+    </label>
+    <input type="text" id="perkText" placeholder="e.g. Arsenal, specialized: always has exactly the gun this job needs">
+  </section>
+
+  <!-- MERITS/FLAWS -->
+  <section class="card">
+    <h3>Advantages</h3>
+    <p class="helper">
+      You have <strong>7 dots</strong> to spend on Advantages that support your life as a Hunter.
+      You can also take up to <strong>2 dots</strong> of Flaws for extra depth (and extra trouble).
+    </p>
+    <div class="attr-grid" id="advGrid"></div>
+    <div class="points-counter" id="advCounter">Points remaining: 7</div>
+
+    <p class="helper" style="margin-top:1.3rem;">Flaws — pick up to 2 dots' worth:</p>
+    <div class="check-list" id="flawList"></div>
+    <div class="counter" id="flawCounter">0 / 2 points selected</div>
+  </section>
+
+  <!-- TOUCHSTONE -->
+  <section class="card">
+    <h3>Touchstone</h3>
+    <p class="helper">
+      A person, place, or routine that still keeps your Hunter connected to their humanity. If
+      they lose it, they lose more than comfort — they risk losing themselves to the Vigil.
+    </p>
+    <div class="examples">
+      <strong>A few ideas:</strong> a little sister who still thinks you're just tired all the time ·
+      Sunday dinner with your parents · a dog who doesn't care what you saw last night ·
+      the community garden you still show up to water · an old friend who has no idea any of this is real
+    </div>
+    <textarea id="touchstoneText" placeholder="e.g. Her nephew Marcus, age 9 — she babysits every Thursday and refuses to miss it, no matter what's hunting her."></textarea>
+  </section>
+
+  <!-- BACKGROUND QUESTIONS -->
+  <section class="card">
+    <h3>A Few Questions</h3>
+    <p class="helper">Short answers are fine — these give your GM (and you) something to build on.</p>
+    <div id="questionBlock"></div>
+  </section>
+
+  <!-- GEAR -->
+  <section class="card">
+    <h3>Gear</h3>
+    <p class="helper">Nothing fancy — this is what an ordinary person can actually get their hands on.</p>
+    <label class="field-label" for="weaponSelect">Primary Weapon</label>
+    <select id="weaponSelect">
+      <option value="">— choose a weapon —</option>
+      <option value="Kitchen knife or utility blade">Kitchen knife or utility blade</option>
+      <option value="Baseball bat or crowbar">Baseball bat or crowbar</option>
+      <option value="Pepper spray / stun gun">Pepper spray / stun gun</option>
+      <option value="Hunting rifle">Hunting rifle</option>
+      <option value="Handgun (legally owned)">Handgun (legally owned)</option>
+      <option value="Handgun (not legally owned)">Handgun (not legally owned)</option>
+      <option value="Improvised weapon (whatever's nearby)">Improvised weapon (whatever's nearby)</option>
+    </select>
+
+    <p class="helper" style="margin-top:1.1rem;">Gear — pick up to 4:</p>
+    <div class="check-list" id="gearList"></div>
+    <div class="counter" id="gearCounter">0 / 4 selected</div>
+  </section>
+
+  <section class="card">
+    <h3>Send It In</h3>
+    <label class="field-label" for="studentEmail">Your Email (optional — we'll CC you a copy)</label>
+    <input type="text" id="studentEmail" placeholder="e.g. jsmith12@go.tarleton.edu">
+  </section>
+
+  <div class="cta-row">
+    <button class="cta" id="generateBtn">Download PDF Character Sheet</button>
+    <button class="cta secondary" id="emailBtn">Email My Character</button>
+  </div>
+  <p class="email-note">
+    "Email My Character" opens your email app addressed to Dr. Holliman, with a text summary
+    pre-filled and, if you entered your email above, CC'd to you as well. Browsers won't let a
+    webpage silently attach a file to an email for security reasons — download the PDF first,
+    then attach it before you hit send.
+  </p>
+  <div id="formStatus"></div>
+</main>
+
+<footer>The Vigil does not end. It only changes hands.</footer>
+
+<script>
+  // ---------- CREEDS ----------
+  const CREEDS = [
+    {t:"Entrepreneurial", s:"Desperation dice when building, repairing, or improvising gear on a hunt."},
+    {t:"Faithful", s:"Desperation dice in any direct confrontation — physical or otherwise — with the supernatural."},
+    {t:"Inquisitive", s:"Desperation dice when digging up information or occult knowledge."},
+    {t:"Martial", s:"Desperation dice in physical conflict — combat, chases, anything requiring force."},
+    {t:"Underground", s:"Desperation dice when being stealthy, deceptive, or working an angle."}
+  ];
+  const creedGrid = document.getElementById("creedGrid");
+  CREEDS.forEach((c,i)=>{
+    creedGrid.innerHTML += `<label class="arch-opt" for="creed${i}">
+      <input type="radio" name="creed" id="creed${i}" value="${c.t}">
+      <span><span class="name">${c.t}</span><span class="sub">${c.s}</span></span>
+    </label>`;
+  });
+
+  // ---------- ATTRIBUTES ----------
+  const ATTR_CATS = {
+    Physical: ["Strength","Dexterity","Stamina"],
+    Social: ["Charisma","Manipulation","Composure"],
+    Mental: ["Intelligence","Wits","Resolve"]
+  };
+  buildPriorityAndGroups("attrPriority", "attrGroups", ATTR_CATS, [6,4,3], 4, 1, "attr");
+
+  // ---------- SKILLS ----------
+  const SKILL_CATS = {
+    Physical: ["Athletics","Brawl","Craft","Drive","Firearms","Larceny","Melee","Stealth","Survival"],
+    Social: ["Animal Ken","Etiquette","Insight","Intimidation","Leadership","Performance","Persuasion","Streetwise","Subterfuge"],
+    Mental: ["Academics","Awareness","Finance","Investigation","Medicine","Occult","Politics","Science","Technology"]
+  };
+  buildPriorityAndGroups("skillPriority", "skillGroups", SKILL_CATS, [11,7,4], 3, 0, "skill");
+
+  function buildPriorityAndGroups(prioId, groupId, cats, pools, cap, base, prefix){
+    const prioWrap = document.getElementById(prioId);
+    const catNames = Object.keys(cats);
+    catNames.forEach(cat=>{
+      prioWrap.innerHTML += `<div>
+        <label class="field-label">${cat}</label>
+        <select data-priocat="${cat}" data-prefix="${prefix}">
+          <option value="">— rank —</option>
+          <option value="0">Primary (${pools[0]} dots)</option>
+          <option value="1">Secondary (${pools[1]} dots)</option>
+          <option value="2">Tertiary (${pools[2]} dots)</option>
+        </select>
+      </div>`;
+    });
+
+    const groupWrap = document.getElementById(groupId);
+    catNames.forEach(cat=>{
+      let block = `<div class="cat-group" data-catgroup="${cat}" data-prefix="${prefix}">
+        <h4>${cat} <span class="points-counter" data-catcounter="${cat}-${prefix}">(rank this category above)</span></h4>
+        <div class="attr-grid">`;
+      cats[cat].forEach(item=>{
+        const id = `${prefix}-${item.replace(/[^a-z0-9]/gi,"")}`;
+        block += `<div class="attr-block">
+          <label for="${id}">${item}</label>
+          <input type="number" id="${id}" min="${base}" max="${cap}" value="${base}" data-item="${item}" data-cat="${cat}" data-prefix2="${prefix}">
+        </div>`;
+      });
+      block += `</div></div>`;
+      groupWrap.innerHTML += block;
+    });
+
+    function refresh(){
+      const priorities = {};
+      document.querySelectorAll(`select[data-prefix="${prefix}"]`).forEach(sel=>{
+        if(sel.value !== "") priorities[sel.dataset.priocat] = parseInt(sel.value,10);
+      });
+      // enforce uniqueness of ranks
+      const used = Object.values(priorities);
+      const dupe = used.length !== new Set(used).size;
+
+      catNames.forEach(cat=>{
+        const rankIdx = priorities[cat];
+        const pool = (rankIdx !== undefined && !dupe) ? pools[rankIdx] : null;
+        const counterEl = document.querySelector(`[data-catcounter="${cat}-${prefix}"]`);
+        const inputs = Array.from(document.querySelectorAll(`input[data-cat="${cat}"][data-prefix2="${prefix}"]`));
+        const spent = inputs.reduce((sum,el)=> sum + (parseInt(el.value||base,10) - base), 0);
+        if(pool === null){
+          counterEl.textContent = dupe ? "(each rank can only be used once)" : "(rank this category above)";
+          counterEl.style.color = "var(--blood-bright)";
+        } else {
+          const remaining = pool - spent;
+          counterEl.textContent = `(${remaining} of ${pool} dots remaining)`;
+          counterEl.style.color = remaining < 0 ? "var(--blood-bright)" : "var(--gold)";
+        }
+      });
+      if(prefix === "attr") refreshDerived();
+    }
+
+    document.querySelectorAll(`select[data-prefix="${prefix}"]`).forEach(sel=>{
+      sel.addEventListener("change", refresh);
+    });
+    document.querySelectorAll(`input[data-prefix2="${prefix}"]`).forEach(el=>{
+      el.addEventListener("input", ()=>{
+        let v = parseInt(el.value||base,10);
+        if(v<base) v=base; if(v>cap) v=cap;
+        el.value = v;
+        refresh();
+      });
+    });
+    refresh();
+  }
+
+  function getAttrVal(name){
+    const id = `attr-${name.replace(/[^a-z0-9]/gi,"")}`;
+    const el = document.getElementById(id);
+    return el ? parseInt(el.value||1,10) : 1;
+  }
+  function refreshDerived(){
+    const stamina = getAttrVal("Stamina");
+    const resolve = getAttrVal("Resolve");
+    const composure = getAttrVal("Composure");
+    const health = 3 + stamina;
+    const willpower = resolve + composure;
+    document.getElementById("derivedStats").innerHTML = `
+      <div><strong>Health</strong>${health} boxes</div>
+      <div><strong>Willpower</strong>${willpower} boxes</div>
+      <div><strong>Humanity</strong>7 (default)</div>
+    `;
+  }
+
+  // ---------- EDGES ----------
+  const EDGES = [
+    {t:"Arsenal", s:"Access to weapons — firearms and melee — most people can't legally get."},
+    {t:"Improvised Gear", s:"Can jury-rig useful tools and equipment out of whatever's on hand."},
+    {t:"Fleet of Foot", s:"Exceptionally fast on foot, in a chase or a fight."},
+    {t:"Cop Chatter", s:"Access to police scanners, contacts, or channels most civilians don't have."},
+    {t:"Interface", s:"A gift for digging up information through phones, computers, and networks."},
+    {t:"Sense the Unnatural", s:"Can feel when something inhuman is nearby, even before seeing it."},
+    {t:"Repel the Unnatural", s:"Faith or willpower alone can push back something monstrous."},
+    {t:"Drone Jockey", s:"Skilled at operating surveillance or combat drones remotely."},
+    {t:"Global Access", s:"Contacts, resources, or reach that extends well outside your hometown."},
+    {t:"Ordnance", s:"Know-how with explosives and heavy, dangerous equipment."}
+  ];
+  buildCheckboxes("edgeList", EDGES, "edge", 2, "edgeCounter", true);
+
+  // ---------- ADVANTAGES (7 dots) ----------
+  const ADVANTAGES = ["Resources","Allies","Contacts","Mentor","Safehouse","Cell Bond"];
+  const advGrid = document.getElementById("advGrid");
+  ADVANTAGES.forEach(a=>{
+    advGrid.innerHTML += `<div class="attr-block">
+      <label for="adv-${a.replace(/[^a-z0-9]/gi,"")}">${a}</label>
+      <input type="number" id="adv-${a.replace(/[^a-z0-9]/gi,"")}" min="0" max="4" value="0" data-adv="${a}">
+    </div>`;
+  });
+  const advInputs = () => Array.from(document.querySelectorAll("[data-adv]"));
+  const ADV_POOL = 7;
+  function refreshAdv(){
+    const spent = advInputs().reduce((sum,el)=> sum + parseInt(el.value||0,10), 0);
+    const remaining = ADV_POOL - spent;
+    const counter = document.getElementById("advCounter");
+    counter.textContent = `Points remaining: ${remaining}`;
+    counter.style.color = remaining < 0 ? "var(--blood-bright)" : "var(--gold)";
+  }
+  advInputs().forEach(el=>{
+    el.addEventListener("input", ()=>{
+      let v = parseInt(el.value||0,10);
+      if(v<0) v=0; if(v>4) v=4;
+      el.value = v;
+      refreshAdv();
+    });
+  });
+  refreshAdv();
+
+  // ---------- FLAWS (up to 2 dots) ----------
+  const FLAWS = [
+    {t:"Enemy", s:"Someone — or something — is actively working against you.", cost:1},
+    {t:"Dark Secret", s:"Something from your past could ruin you if it came out.", cost:1},
+    {t:"Habit", s:"A dependency that occasionally gets in your way.", cost:1},
+    {t:"Short Fuse", s:"You lose your composure faster than most.", cost:1},
+    {t:"Stalked", s:"Something knows who you are and where to find you.", cost:2},
+    {t:"Notoriety", s:"People in the know have heard of you — not always a good thing.", cost:1}
+  ];
+  const flawWrap = document.getElementById("flawList");
+  FLAWS.forEach((f,i)=>{
+    flawWrap.innerHTML += `<label class="opt negative" for="flaw${i}">
+      <input type="checkbox" name="flaw" id="flaw${i}" value="${f.t}" data-cost="${f.cost}">
+      <span><span class="opt-title">${f.t} (${f.cost} dot${f.cost>1?"s":""})</span><span class="opt-sub"> — ${f.s}</span></span>
+    </label>`;
+  });
+  function refreshFlaws(){
+    const checked = Array.from(document.querySelectorAll('input[name="flaw"]:checked'));
+    const spent = checked.reduce((sum,el)=> sum + parseInt(el.dataset.cost,10), 0);
+    document.getElementById("flawCounter").textContent = `${spent} / 2 points selected`;
+    document.querySelectorAll('input[name="flaw"]').forEach(el=>{
+      if(!el.checked){
+        el.disabled = (spent + parseInt(el.dataset.cost,10)) > 2;
+      }
+    });
+  }
+  document.querySelectorAll('input[name="flaw"]').forEach(el=> el.addEventListener("change", refreshFlaws));
+  refreshFlaws();
+
+  // ---------- BACKGROUND QUESTIONS ----------
+  const QUESTIONS = [
+    {id:"q1", label:"What did they see that changed everything?"},
+    {id:"q2", label:"What does your Hunter do right before they break?"},
+    {id:"q3", label:"Who in the cell do they trust most, and why?"}
+  ];
+  const qWrap = document.getElementById("questionBlock");
+  QUESTIONS.forEach(q=>{
+    qWrap.innerHTML += `<div class="q-block">
+      <label for="${q.id}">${q.label}</label>
+      <textarea id="${q.id}" style="min-height:60px;"></textarea>
+    </div>`;
+  });
+
+  // ---------- GEAR ----------
+  const GEAR = [
+    "First aid kit","Flashlight","Burner phone","Lockpick set","Road flares",
+    "Salt / iron / holy water (your call)","Camera or recorder","Rope or zip ties",
+    "Police scanner","Notebook full of research"
+  ];
+  buildCheckboxes("gearList", GEAR, "gear", 4, "gearCounter");
+
+  // ---------- helpers ----------
+  function optHTML(name, id, title, sub, type){
+    return `<label class="opt" for="${id}">
+      <input type="${type}" name="${name}" id="${id}" value="${title.replace(/"/g,'&quot;')}">
+      <span><span class="opt-title">${title}</span>${sub ? `<span class="opt-sub"> — ${sub}</span>` : ""}</span>
+    </label>`;
+  }
+  function buildCheckboxes(containerId, items, groupName, max, counterId, hasSub){
+    const wrap = document.getElementById(containerId);
+    items.forEach((item,i)=>{
+      const title = hasSub ? item.t : item;
+      const sub = hasSub ? item.s : "";
+      wrap.innerHTML += optHTML(groupName, `${groupName}${i}`, title, sub, "checkbox");
+    });
+    const boxes = () => Array.from(wrap.querySelectorAll(`input[name="${groupName}"]`));
+    const counter = document.getElementById(counterId);
+    function update(){
+      const checked = boxes().filter(b=>b.checked);
+      counter.textContent = `${checked.length} / ${max} selected`;
+      boxes().forEach(b=>{ if(!b.checked) b.disabled = checked.length >= max; });
+    }
+    boxes().forEach(b=> b.addEventListener("change", update));
+    update();
+  }
+  function getChecked(name){
+    return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(b=>b.value);
+  }
+  function getRadio(name){
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : "";
+  }
+
+  function collectCharacter(){
+    const attrs = {};
+    Object.values(ATTR_CATS).flat().forEach(a=>{ attrs[a] = getAttrVal(a); });
+    const skills = {};
+    Object.values(SKILL_CATS).flat().forEach(s=>{
+      const id = `skill-${s.replace(/[^a-z0-9]/gi,"")}`;
+      skills[s] = parseInt(document.getElementById(id).value||0,10);
+    });
+    const stamina = getAttrVal("Stamina"), resolve = getAttrVal("Resolve"), composure = getAttrVal("Composure");
+    return {
+      name: document.getElementById("charName").value.trim(),
+      concept: document.getElementById("charConcept").value.trim(),
+      drive: document.getElementById("driveText").value.trim(),
+      creed: getRadio("creed"),
+      attrs, skills,
+      specialties: document.getElementById("specialtiesText").value.trim(),
+      health: 3 + stamina,
+      willpower: resolve + composure,
+      edges: getChecked("edge"),
+      perk: document.getElementById("perkText").value.trim(),
+      advantages: ADVANTAGES.reduce((obj,a)=>{ obj[a]=parseInt(document.getElementById(`adv-${a.replace(/[^a-z0-9]/gi,"")}`).value||0,10); return obj; },{}),
+      flaws: getChecked("flaw"),
+      touchstone: document.getElementById("touchstoneText").value.trim(),
+      questions: QUESTIONS.map(q=>({label:q.label, val: document.getElementById(q.id).value.trim()})),
+      weapon: document.getElementById("weaponSelect").value,
+      gear: getChecked("gear"),
+      studentEmail: document.getElementById("studentEmail").value.trim()
+    };
+  }
+
+  function validate(c){
+    const missing = [];
+    if(!c.name) missing.push("Hunter's Name");
+    if(!c.concept) missing.push("Character Concept");
+    if(!c.drive) missing.push("Drive");
+    if(!c.creed) missing.push("Creed");
+    if(c.edges.length < 1) missing.push("at least 1 Edge");
+    if(!c.touchstone) missing.push("Touchstone");
+    if(!c.weapon) missing.push("Primary Weapon");
+    return missing;
+  }
+
+  document.getElementById("generateBtn").addEventListener("click", ()=>{
+    const c = collectCharacter();
+    const missing = validate(c);
+    const status = document.getElementById("formStatus");
+    if(missing.length){ status.textContent = "Still needed: " + missing.join(", "); return; }
+    status.textContent = "Compiling character sheet...";
+    buildPDF(c);
+    status.textContent = "Downloaded! Check your Downloads folder.";
+  });
+
+  document.getElementById("emailBtn").addEventListener("click", ()=>{
+    const c = collectCharacter();
+    const missing = validate(c);
+    const status = document.getElementById("formStatus");
+    if(missing.length){ status.textContent = "Still needed: " + missing.join(", "); return; }
+    const EMAIL_TO = "holliman@tarleton.edu";
+    const subject = encodeURIComponent(`Hunter: The Reckoning Character: ${c.name}`);
+    const body = encodeURIComponent(buildSummaryText(c));
+    const cc = c.studentEmail ? `&cc=${encodeURIComponent(c.studentEmail)}` : "";
+    window.location.href = `mailto:${EMAIL_TO}?subject=${subject}&body=${body}${cc}`;
+  });
+
+  function buildSummaryText(c){
+    const trainedSkills = Object.entries(c.skills).filter(([k,v])=>v>0);
+    return [
+      `HUNTER: THE RECKONING — CHARACTER SUMMARY`,
+      `Name: ${c.name}`,
+      `Concept: ${c.concept}`,
+      `Drive: ${c.drive}`,
+      `Creed: ${c.creed}`,
+      ``,
+      `ATTRIBUTES`,
+      ...Object.entries(c.attrs).map(([k,v])=>`  ${k}: ${v}`),
+      ``,
+      `SKILLS`,
+      ...trainedSkills.map(([k,v])=>`  ${k}: ${v}`),
+      c.specialties ? `Specialties: ${c.specialties}` : null,
+      ``,
+      `Health: ${c.health}   Willpower: ${c.willpower}   Humanity: 7 (default)`,
+      ``,
+      `Edges: ${c.edges.join(", ")}`,
+      c.perk ? `Perk: ${c.perk}` : null,
+      ``,
+      `Advantages: ` + Object.entries(c.advantages).filter(([k,v])=>v>0).map(([k,v])=>`${k} ${v}`).join(", "),
+      `Flaws: ${c.flaws.join(", ") || "—"}`,
+      ``,
+      `Touchstone: ${c.touchstone}`,
+      ``,
+      ...c.questions.map(q=>`${q.label}\n  ${q.val || "—"}`),
+      ``,
+      `Weapon: ${c.weapon}`,
+      `Gear: ${c.gear.join(", ") || "—"}`,
+      ``,
+      `(Full PDF character sheet attached — remember to attach the downloaded PDF before sending.)`
+    ].filter(line => line !== null).join("\n");
+  }
+
+  function buildPDF(c){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:"pt", format:"letter" });
+    const pageW = doc.internal.pageSize.getWidth();
+    let y = 50;
+
+    doc.setFillColor(23,17,16);
+    doc.rect(0,0,pageW,70,"F");
+    doc.setTextColor(233,221,201);
+    doc.setFont("times","bold");
+    doc.setFontSize(20);
+    doc.text("HUNTER: THE RECKONING", pageW/2, 30, {align:"center"});
+    doc.setFontSize(10);
+    doc.setFont("times","normal");
+    doc.text("VIGIL SHEET  ·  CNSL 5339/6339", pageW/2, 48, {align:"center"});
+
+    doc.setTextColor(20,20,20);
+    y = 95;
+    doc.setFontSize(14);
+    doc.setFont("helvetica","bold");
+    doc.text(c.name, 50, y);
+    doc.setFont("helvetica","normal");
+    doc.setFontSize(10);
+    doc.text(`Creed: ${c.creed}`, pageW-50, y, {align:"right"});
+    y += 16;
+    doc.setFontSize(11);
+    doc.setFont("helvetica","italic");
+    doc.text(doc.splitTextToSize(c.concept, pageW-100), 50, y);
+    y += 20;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    doc.text(doc.splitTextToSize("Drive: " + c.drive, pageW-100), 50, y);
+    y += 26;
+
+    doc.setDrawColor(150,150,150);
+    doc.line(50,y,pageW-50,y);
+    y += 20;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("ATTRIBUTES", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    let col = 0, startY = y;
+    Object.entries(c.attrs).forEach(([k,v],i)=>{
+      const colX = 55 + (col * 170);
+      doc.text(`${k}: ${v}`, colX, y);
+      y += 14;
+      if((i+1) % 3 === 0){ col++; y = startY; }
+    });
+    y = startY + 3*14 + 10;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("SKILLS", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    const trainedSkills = Object.entries(c.skills).filter(([k,v])=>v>0);
+    if(trainedSkills.length){
+      col = 0; startY = y;
+      trainedSkills.forEach(([k,v],i)=>{
+        const colX = 55 + (col * 250);
+        doc.text(`${k}: ${v}`, colX, y);
+        y += 13;
+        if((i+1) % 9 === 0){ col++; y = startY; }
+      });
+      y = startY + Math.min(9, trainedSkills.length)*13 + 8;
+    } else { doc.text("—", 55, y); y += 13; }
+    if(c.specialties){
+      doc.text(doc.splitTextToSize("Specialties: " + c.specialties, pageW-110), 55, y); y += 15;
+    }
+    y += 6;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text(`HEALTH: ${c.health}    WILLPOWER: ${c.willpower}    HUMANITY: 7`, 50, y); y += 26;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("EDGES & PERK", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    doc.text(doc.splitTextToSize("Edges: " + c.edges.join(", "), pageW-110), 55, y); y += 15;
+    if(c.perk){ doc.text(doc.splitTextToSize("Perk: " + c.perk, pageW-110), 55, y); y += 15; }
+    y += 9;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("ADVANTAGES & FLAWS", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    const advText = Object.entries(c.advantages).filter(([k,v])=>v>0).map(([k,v])=>`${k} ${v}`).join(", ") || "—";
+    doc.text(doc.splitTextToSize("Advantages: " + advText, pageW-110), 55, y); y += 15;
+    doc.text(doc.splitTextToSize("Flaws: " + (c.flaws.join(", ") || "—"), pageW-110), 55, y); y += 24;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("TOUCHSTONE", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    let lines = doc.splitTextToSize(c.touchstone, pageW-110);
+    doc.text(lines, 55, y); y += 14*lines.length + 10;
+
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("GEAR", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    doc.text(doc.splitTextToSize("Weapon: " + c.weapon, pageW-110), 55, y); y += 15;
+    doc.text(doc.splitTextToSize("Gear: " + (c.gear.join(", ") || "—"), pageW-110), 55, y); y += 24;
+
+    if(y > 680){ doc.addPage(); y = 50; }
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("BACKGROUND", 50, y); y += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(9);
+    c.questions.forEach(q=>{
+      if(y > 700){ doc.addPage(); y = 50; }
+      doc.setFont("helvetica","bold");
+      doc.text(doc.splitTextToSize(q.label, pageW-110), 55, y);
+      y += 13;
+      doc.setFont("helvetica","normal");
+      const a = doc.splitTextToSize(q.val || "—", pageW-110);
+      doc.text(a, 55, y);
+      y += 13*a.length + 8;
+    });
+
+    doc.setFontSize(8);
+    doc.setTextColor(140,140,140);
+    doc.text("Generated for Therapeutic Applications of TTRPGs — Tarleton State University", pageW/2, 780, {align:"center"});
+
+    const fileName = c.name.replace(/[^a-z0-9]/gi,"_") || "hunter";
+    doc.save(`${fileName}_HunterTheReckoning.pdf`);
+  }
+</script>
+
+</body>
+</html>
 
