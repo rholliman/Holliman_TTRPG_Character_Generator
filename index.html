@@ -1,1 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNSL 5339/6339 — Therapeutic Applications of TTRPGs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#060a12;
+    --panel:#0c121e;
+    --grid-line: rgba(46,230,214,0.12);
+    --cyan:#2ee6d6;
+    --magenta:#ff2e88;
+    --amber:#ffb020;
+    --dim:#6f7f92;
+    --text:#d8e4ec;
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    height:100%;
+    background:var(--void);
+    color:var(--text);
+    font-family:'Share Tech Mono', monospace;
+    overflow-x:hidden;
+  }
+
+  /* perspective grid floor */
+  .grid-floor{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 60px 60px;
+    transform: perspective(500px) rotateX(60deg) scale(2.2);
+    transform-origin: center top;
+    top:35%;
+    opacity:0.55;
+    animation: drift 14s linear infinite;
+  }
+  @keyframes drift{
+    from{ background-position: 0 0, 0 0; }
+    to{ background-position: 0 60px, 0 0; }
+  }
+
+  .glow-horizon{
+    position:fixed;
+    left:0; right:0; top:33%;
+    height:2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), transparent);
+    box-shadow: 0 0 20px 4px rgba(46,230,214,0.5);
+    z-index:1;
+    opacity:0.8;
+  }
+
+  /* scanline overlay */
+  .scanlines{
+    position:fixed;
+    inset:0;
+    z-index:5;
+    pointer-events:none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.02) 0px,
+      rgba(255,255,255,0.02) 1px,
+      transparent 2px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+  }
+
+  .vignette{
+    position:fixed;
+    inset:0;
+    z-index:4;
+    pointer-events:none;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.85) 100%);
+  }
+
+  main{
+    position:relative;
+    z-index:10;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:8vh 5vw 10vh;
+  }
+
+  .eyebrow{
+    font-size:0.75rem;
+    letter-spacing:0.35em;
+    color:var(--cyan);
+    text-transform:uppercase;
+    margin-bottom:1.2rem;
+    opacity:0.85;
+  }
+  .eyebrow::before{ content:"// "; color:var(--magenta); }
+
+  h1{
+    font-family:'Orbitron', sans-serif;
+    font-weight:800;
+    text-align:center;
+    font-size:clamp(1.4rem, 4vw, 2.6rem);
+    letter-spacing:0.03em;
+    line-height:1.4;
+    max-width:900px;
+    margin:0 0 0.6rem;
+    color:#f2fbfa;
+    text-shadow:
+      0 0 8px rgba(46,230,214,0.6),
+      0 0 22px rgba(46,230,214,0.25);
+    position:relative;
+  }
+
+  h1 .glitch{
+    position:relative;
+    display:inline-block;
+  }
+  h1 .glitch::before,
+  h1 .glitch::after{
+    content: attr(data-text);
+    position:absolute;
+    left:0; top:0;
+    width:100%;
+    overflow:hidden;
+    background:transparent;
+  }
+  h1 .glitch::before{
+    color:var(--magenta);
+    clip-path: inset(0 0 60% 0);
+    animation: glitch-a 5s infinite linear;
+  }
+  h1 .glitch::after{
+    color:var(--cyan);
+    clip-path: inset(60% 0 0 0);
+    animation: glitch-b 6s infinite linear;
+  }
+  @keyframes glitch-a{
+    0%,92%,100%{ transform:translate(0,0); opacity:0; }
+    93%{ transform:translate(-2px,-1px); opacity:0.7; }
+    95%{ transform:translate(2px,1px); opacity:0.7; }
+    97%{ transform:translate(-1px,0); opacity:0; }
+  }
+  @keyframes glitch-b{
+    0%,90%,100%{ transform:translate(0,0); opacity:0; }
+    91%{ transform:translate(2px,1px); opacity:0.6; }
+    94%{ transform:translate(-2px,0); opacity:0.6; }
+    96%{ transform:translate(1px,-1px); opacity:0; }
+  }
+
+  .subhead{
+    text-align:center;
+    color:var(--dim);
+    font-size:0.9rem;
+    letter-spacing:0.05em;
+    margin-bottom:3.5rem;
+  }
+
+  .intro{
+    max-width:680px;
+    text-align:center;
+    color:var(--text);
+    font-size:0.95rem;
+    line-height:1.75;
+    margin-bottom:1.2rem;
+    border-left:2px solid var(--cyan);
+    border-right:2px solid var(--magenta);
+    padding:1.4rem 1.6rem;
+    background:rgba(12,18,30,0.6);
+    backdrop-filter: blur(2px);
+  }
+  .intro .cursor{
+    display:inline-block;
+    width:0.55em;
+    height:1em;
+    background:var(--cyan);
+    vertical-align:text-bottom;
+    animation: blink 1s step-end infinite;
+    margin-left:2px;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  .prompt-label{
+    align-self:flex-start;
+    max-width:680px;
+    width:100%;
+    color:var(--amber);
+    font-size:0.78rem;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    margin:2.6rem 0 1.2rem;
+    text-align:left;
+  }
+
+  nav.systems{
+    display:grid;
+    grid-template-columns:repeat(3, minmax(220px,1fr));
+    gap:1.6rem;
+    width:100%;
+    max-width:1000px;
+  }
+  @media (max-width:760px){
+    nav.systems{ grid-template-columns:1fr; }
+  }
+
+  .sys-btn{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:0.5rem;
+    padding:1.5rem 1.4rem;
+    background:linear-gradient(160deg, rgba(255,255,255,0.03), transparent);
+    border:1px solid var(--accent, var(--cyan));
+    color:var(--text);
+    text-decoration:none;
+    font-family:'Share Tech Mono', monospace;
+    cursor:pointer;
+    overflow:hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+  .sys-btn::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background: linear-gradient(120deg, transparent 40%, var(--accent, var(--cyan)) 50%, transparent 60%);
+    opacity:0;
+    transform:translateX(-120%);
+    transition:none;
+  }
+  .sys-btn:hover{
+    transform:translateY(-4px);
+    box-shadow: 0 0 0 1px var(--accent, var(--cyan)), 0 0 26px -4px var(--accent, var(--cyan));
+    background:linear-gradient(160deg, rgba(255,255,255,0.06), transparent);
+  }
+  .sys-btn:hover::before{
+    opacity:0.15;
+    animation: sweep 0.9s ease forwards;
+  }
+  @keyframes sweep{
+    to{ transform:translateX(120%); }
+  }
+
+  .sys-tag{
+    font-size:0.7rem;
+    letter-spacing:0.18em;
+    color:var(--accent, var(--cyan));
+    text-transform:uppercase;
+  }
+  .sys-name{
+    font-family:'Orbitron', sans-serif;
+    font-weight:600;
+    font-size:1.05rem;
+    color:#f2fbfa;
+    letter-spacing:0.01em;
+  }
+  .sys-desc{
+    font-size:0.78rem;
+    color:var(--dim);
+    line-height:1.5;
+  }
+  .sys-arrow{
+    margin-top:0.6rem;
+    font-size:0.75rem;
+    color:var(--accent, var(--cyan));
+    letter-spacing:0.1em;
+  }
+
+  footer{
+    position:relative;
+    z-index:10;
+    text-align:center;
+    color:var(--dim);
+    font-size:0.7rem;
+    letter-spacing:0.12em;
+    padding-bottom:3vh;
+  }
+</style>
+</head>
+<body>
+
+  <div class="grid-floor"></div>
+  <div class="glow-horizon"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+
+  <main>
+    <p class="eyebrow">Tarleton State University · Counseling</p>
+    <h1>
+      <span class="glitch" data-text="CNSL 5339/6339">CNSL 5339/6339</span><br>
+      Therapeutic Applications of Tabletop Role-Playing Games
+    </h1>
+    <p class="subhead">CHARACTER CREATION TERMINAL — SELECT A SYSTEM TO BEGIN</p>
+
+    <p class="intro">
+      Each system below opens its own guided character generator. Answer the prompts,
+      and the tool handles the math for you — ability scores, derived stats, and all —
+      so you can focus on who the character is, not the arithmetic behind them.<span class="cursor"></span>
+    </p>
+
+    <p class="prompt-label">&gt; select_system.exe</p>
+
+    <nav class="systems">
+      <a class="sys-btn" style="--accent:var(--amber)" href="kids-on-bikes.html">
+        <span class="sys-tag">Mystery / Small Town</span>
+        <span class="sys-name">Kids on Bikes</span>
+        <span class="sys-desc">Fast, collaborative stat generation for ensemble casts of everyday heroes.</span>
+        <span class="sys-arrow">Launch generator →</span>
+      </a>
+
+      <a class="sys-btn" style="--accent:var(--magenta)" href="hunter-the-reckoning.html">
+        <span class="sys-tag">Gothic Horror</span>
+        <span class="sys-name">Hunter: The Reckoning</span>
+        <span class="sys-desc">Build a hunter's Attributes, Edges, and Desperation from the ground up.</span>
+        <span class="sys-arrow">Launch generator →</span>
+      </a>
+
+      <a class="sys-btn" style="--accent:var(--cyan)" href="shadowrun-anarchy.html">
+        <span class="sys-tag">Cyberpunk / Near-Future</span>
+        <span class="sys-name">Shadowrun: Anarchy</span>
+        <span class="sys-desc">Assemble a runner's Qualities, Cues, and dice pools without the spreadsheet.</span>
+        <span class="sys-arrow">Launch generator →</span>
+      </a>
+    </nav>
+  </main>
+
+  <footer>SIGNAL STABLE · NO DATA STORED CLIENT-SIDE</footer>
+
+</body>
+</html>
 
